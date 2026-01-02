@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手開發票小助理 - 稅務小豆腐</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --tofu-yellow: #fff9e6;
+            --tofu-border: #e6d5a7;
+            --tofu-accent: #f39800;
+        }
+        body {
+            background-color: #fdfaf2;
+            font-family: 'Noto Sans TC', sans-serif;
+            color: #4a4a4a;
+        }
+        .card {
+            background: white;
+            border: 2px solid var(--tofu-border);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(230, 213, 167, 0.2);
+        }
+        .input-box {
+            width: 100%;
+            border: 1px solid var(--tofu-border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            outline: none;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+        .input-box::-webkit-outer-spin-button,
+        .input-box::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .input-box:focus {
+            border-color: var(--tofu-accent);
+            background-color: #fffef9;
+        }
+        .inv-text {
+            font-family: 'Noto Serif TC', serif;
+            fill: #2c5282;
+        }
+        .inv-label {
+            fill: #3182ce;
+            font-size: 11px;
+        }
+        .inv-line {
+            stroke: #3182ce;
+            stroke-width: 0.8;
+        }
+        .btn-add {
+            background: #f39800;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .brush-font {
+            font-family: 'Ma Shan Zheng', 'Noto Serif TC', serif;
+        }
+        .loading-dots:after {
+            content: '.';
+            animation: dots 1s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+    </style>
+</head>
+<body class="py-8 px-4">
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-orange-800 tracking-tight">\\ 手開發票小助理 //</h1>
+            <p class="text-gray-500 text-sm mt-2">稅務小豆腐是你的好幫手</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- 左側設定與 AI 諮詢 -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="card p-6">
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="col-span-2 flex gap-2">
+                            <button id="tab3" onclick="switchMode('3')" class="flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-orange-500 text-white transition-all">三聯式</button>
+                            <button id="tab2" onclick="switchMode('2')" class="flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-white text-orange-500 transition-all">二聯式</button>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-xs font-bold text-gray-400 mb-1 px-1">發票日期</label>
+                            <input type="date" id="dateInput" class="input-box" onchange="update()">
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-xs font-bold text-gray-400 mb-1 px-1">課稅別</label>
+                            <select id="taxType" class="input-box" onchange="update()">
+                                <option value="5">應稅 (5%)</option>
+                                <option value="0">零稅率 (0%)</option>
+                                <option value="free">免稅</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="buyerSection" class="space-y-4 mb-6 transition-opacity duration-300">
+                        <input type="text" id="buyerName" class="input-box" placeholder="買受人名稱 (三聯式必填)" oninput="update()">
+                        <input type="text" id="buyerTaxId" class="input-box font-mono tracking-widest" placeholder="買受人統一編號" maxlength="8" oninput="update()">
+                    </div>
+
+                    <div class="border-t border-gray-100 pt-6 mb-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-bold text-gray-700">銷售項目 (金額擇一填寫，自動四捨五入)</h3>
+                            <button id="addBtn" onclick="addItem()" class="btn-add hover:scale-105 active:scale-95 transition-transform">+ 增加項目</button>
+                        </div>
+                        <div class="grid grid-cols-12 gap-2 mb-2 px-1 text-[11px] font-bold text-gray-400 text-center">
+                            <div class="col-span-4 text-left">品名</div>
+                            <div class="col-span-2">數量</div>
+                            <div class="col-span-3">未稅單價</div>
+                            <div class="col-span-3">含稅單價</div>
+                        </div>
+                        <div id="itemList" class="space-y-4"></div>
+                    </div>
+
+                    <div class="bg-blue-50 p-4 rounded-xl space-y-2 border border-blue-100">
+                        <div class="flex justify-between text-sm text-gray-600"><span>銷售額合計 (未稅)：</span><span id="uiSales" class="font-mono font-bold">0</span></div>
+                        <div class="flex justify-between text-sm text-gray-600"><span>營業稅額：</span><span id="uiTax" class="font-mono font-bold">0</span></div>
+                        <div class="flex justify-between font-bold text-lg text-blue-800 pt-2 border-t border-blue-200">
+                            <span>總計 (含稅)：</span><span id="uiTotal" class="font-mono">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI 稅務小老師 -->
+                <div class="card p-5 bg-orange-50 border-orange-200">
+                    <h3 class="text-sm font-bold text-orange-800 mb-3 flex items-center">
+                        <span class="mr-2">✨</span> AI 稅務小老師
+                    </h3>
+                    <div id="aiChatBox" class="text-xs text-gray-600 mb-4 h-32 overflow-y-auto bg-white p-3 rounded-lg border border-orange-100">
+                        您好！這是一個基於 AI 的諮詢工具。您可以問我任何關於發票、報稅或品名歸類的建議。
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="aiQuery" class="input-box text-xs" placeholder="例如：加油收據可以報帳嗎？">
+                        <button onclick="askTaxAI()" id="aiAskBtn" class="bg-orange-600 text-white px-3 py-1 rounded-lg text-xs font-bold shrink-0 hover:bg-orange-700">詢問</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側預覽 -->
+            <div class="lg:col-span-7">
+                <div id="previewContainer" class="bg-white p-4 shadow-2xl border border-gray-300 relative overflow-hidden">
+                    <svg viewBox="0 0 850 620" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
+                        <rect width="850" height="620" fill="#fff" />
+                        <text x="50" y="45" font-size="25" fill="#666" font-family="monospace">EX 12345678</text>
+                        <text x="425" y="45" text-anchor="middle" font-size="20" font-weight="bold" fill="#333" id="pTypeLabel">統 一 發 票 (三 聯 式)</text>
+                        <text x="425" y="75" text-anchor="middle" font-size="14" fill="#333">
+                            <tspan id="pYearText">一一四</tspan> 年 <tspan id="pMonthRange">七、八</tspan> 月份
+                        </text>
+
+                        <g transform="translate(50, 100)">
+                            <text x="0" y="15" class="inv-label">買 受 人：</text>
+                            <text x="70" y="15" class="inv-text" font-size="15" id="pBuyer"></text>
+                            <line x1="65" y1="20" x2="750" y2="20" class="inv-line" />
+                            <text x="0" y="45" class="inv-label">統一編號：</text>
+                            <text x="75" y="45" class="inv-text" font-size="25" letter-spacing="12" id="pTaxId"></text>
+                            <text x="350" y="45" class="inv-label" id="pDateLong" font-size="30" font-weight="bold">中華民國 114 年 7 月 2 日</text>
+                            <line x1="65" y1="50" x2="330" y2="50" class="inv-line" />
+                            <text x="0" y="75" class="inv-label">地　　址：</text>
+                            <line x1="65" y1="80" x2="750" y2="80" class="inv-line" />
+                        </g>
+
+                        <g transform="translate(50, 190)">
+                            <rect width="750" height="380" fill="none" stroke="#3182ce" />
+                            <line x1="0" y1="35" x2="750" y2="35" class="inv-line" />
+                            <line x1="320" y1="0" x2="320" y2="210" class="inv-line" />
+                            <line x1="390" y1="0" x2="390" y2="210" class="inv-line" />
+                            <line x1="480" y1="0" x2="480" y2="210" class="inv-line" />
+                            <line x1="580" y1="0" x2="580" y2="380" class="inv-line" />
+                            <g font-size="12" fill="#3182ce" text-anchor="middle">
+                                <text x="160" y="22">品　　名</text>
+                                <text x="355" y="22">數 量</text>
+                                <text x="435" y="22">單 價</text>
+                                <text x="530" y="22">金 額</text>
+                                <text x="665" y="22">備 註</text>
+                            </g>
+                            <g id="pItemsGroup"></g>
+                            
+                            <g transform="translate(665, 250)">
+                                <ellipse cx="0" cy="0" rx="60" ry="38" fill="none" stroke="#e53e3e" stroke-width="2" stroke-dasharray="3,2" />
+                                <text x="0" y="-5" text-anchor="middle" font-size="18" fill="#e53e3e" class="brush-font">統一發票</text>
+                                <text x="0" y="12" text-anchor="middle" font-size="18" fill="#e53e3e" class="brush-font">專用章</text>
+                            </g>
+
+                            <g transform="translate(0, 210)">
+                                <line x1="0" y1="0" x2="580" y2="0" class="inv-line" />
+                                <text x="10" y="22" class="inv-label">銷 售 額 合 計</text>
+                                <text x="570" y="22" text-anchor="end" class="inv-text" font-size="15" id="pSalesSub"></text>
+                                <line x1="0" y1="35" x2="580" y2="35" class="inv-line" />
+                                <text x="10" y="57" class="inv-label">營 業 稅</text>
+                                <g font-size="10" fill="#3182ce">
+                                    <text x="110" y="57">應稅 □</text>
+                                    <text x="170" y="57">零稅率 □</text>
+                                    <text x="245" y="57">免稅 □</text>
+                                </g>
+                                <g id="pTaxCheck"></g>
+                                <text x="570" y="57" text-anchor="end" class="inv-text" font-size="15" id="pTaxSub"></text>
+                                <line x1="0" y1="70" x2="580" y2="70" class="inv-line" />
+                                <text x="10" y="92" class="inv-label" font-weight="bold">總　　計</text>
+                                <text x="570" y="92" text-anchor="end" class="inv-text" font-size="18" font-weight="bold" id="pTotalSub"></text>
+                                <line x1="0" y1="105" x2="750" y2="105" class="inv-line" />
+                                <g transform="translate(10, 135)">
+                                    <text x="0" y="0" class="inv-label">總計新臺幣</text>
+                                    <g id="pChineseGroup" transform="translate(75, 5)"></g>
+                                </g>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; 
+
+        async function geminiCall(prompt, systemInstruction = "") {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+            let delay = 1000;
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text;
+                } catch (err) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+            throw new Error("AI 服務暫時無法連線");
+        }
+
+        async function optimizeItemName(index) {
+            const currentName = items[index].name;
+            if (!currentName) return;
+            const btn = document.getElementById(`optBtn-${index}`);
+            btn.innerHTML = `...`;
+            btn.disabled = true;
+            try {
+                const result = await geminiCall(
+                    `將「${currentName}」優化為專業發票品名。例如「買飯」變「餐費」。僅回傳名稱，5字內。`,
+                    "你是一位專業會計，擅長精煉品名。"
+                );
+                if (result) {
+                    items[index].name = result.trim();
+                    renderItems();
+                    update();
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                btn.innerHTML = `✨`;
+                btn.disabled = false;
+            }
+        }
+
+        async function askTaxAI() {
+            const query = document.getElementById('aiQuery').value;
+            const chatBox = document.getElementById('aiChatBox');
+            const askBtn = document.getElementById('aiAskBtn');
+            if (!query) return;
+            chatBox.innerHTML += `<div class="mt-2 text-orange-600 font-bold">問：${query}</div>`;
+            document.getElementById('aiQuery').value = '';
+            askBtn.disabled = true;
+            chatBox.scrollTop = chatBox.scrollHeight;
+            try {
+                const response = await geminiCall(query, "你是一位精通台灣稅務法規的專業會計師。請簡潔回答問題。");
+                chatBox.innerHTML += `<div class="mt-1 border-l-2 border-orange-200 pl-2 text-gray-700">答：${response}</div>`;
+            } catch (e) {
+                chatBox.innerHTML += `<div class="mt-1 text-red-500 text-[10px]">服務繁忙，請稍後再試。</div>`;
+            } finally {
+                askBtn.disabled = false;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        // --- 核心應用邏輯 ---
+        let mode = '3';
+        let items = [{ name: '', qty: 1, price: 0, taxPrice: 0 }];
+
+        document.getElementById('dateInput').valueAsDate = new Date();
+
+        function switchMode(m) {
+            mode = m;
+            const btn3 = document.getElementById('tab3');
+            const btn2 = document.getElementById('tab2');
+            btn3.className = m === '3' ? 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-orange-500 text-white transition-all' : 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-white text-orange-500 transition-all';
+            btn2.className = m === '2' ? 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-orange-500 text-white transition-all' : 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-white text-orange-500 transition-all';
+            document.getElementById('pTypeLabel').textContent = m === '3' ? '統 一 發 票 (三 聯 式)' : '統 一 發 票 (二 聯 式)';
+            document.getElementById('buyerSection').style.opacity = m === '3' ? '1' : '0.4';
+            update();
+        }
+
+        function addItem() {
+            if (items.length >= 5) return;
+            items.push({ name: '', qty: 1, price: 0, taxPrice: 0 });
+            renderItems();
+        }
+
+        function removeItem(index) {
+            items.splice(index, 1);
+            renderItems();
+            document.getElementById('addBtn').style.display = 'block';
+            update();
+        }
+
+        function updateItemData(idx, field, val) {
+            const num = Math.round(parseFloat(val)) || 0;
+            if (field === 'qty') {
+                items[idx].qty = num;
+            } else if (field === 'price') {
+                items[idx].price = num;
+                items[idx].taxPrice = Math.round(num * 1.05);
+                document.getElementById(`taxPrice-${idx}`).value = items[idx].taxPrice || '';
+            } else if (field === 'taxPrice') {
+                items[idx].taxPrice = num;
+                items[idx].price = Math.round(num / 1.05);
+                document.getElementById(`price-${idx}`).value = items[idx].price || '';
+            }
+            update();
+        }
+
+        function renderItems() {
+            const container = document.getElementById('itemList');
+            container.innerHTML = '';
+            items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'grid grid-cols-12 gap-2 items-center relative';
+                div.innerHTML = `
+                    <div class="col-span-4 flex gap-1 items-center">
+                        <input type="text" value="${item.name}" placeholder="品名" class="input-box" oninput="items[${index}].name=this.value; update()">
+                        <button id="optBtn-${index}" onclick="optimizeItemName(${index})" class="shrink-0 w-6 h-6 bg-orange-100 text-orange-600 rounded flex items-center justify-center hover:bg-orange-200 transition-colors" title="AI 品名優化">✨</button>
+                    </div>
+                    <div class="col-span-2">
+                        <input type="number" value="${item.qty}" class="input-box text-center" oninput="updateItemData(${index}, 'qty', this.value)">
+                    </div>
+                    <div class="col-span-3">
+                        <input type="number" id="price-${index}" value="${item.price || ''}" class="input-box text-right bg-gray-50 border-gray-200" oninput="updateItemData(${index}, 'price', this.value)">
+                    </div>
+                    <div class="col-span-2">
+                        <input type="number" id="taxPrice-${index}" value="${item.taxPrice || ''}" class="input-box text-right border-orange-200" oninput="updateItemData(${index}, 'taxPrice', this.value)">
+                    </div>
+                    <button onclick="removeItem(${index})" class="col-span-1 text-red-300 font-bold hover:text-red-500 text-xl leading-none">×</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function toChineseNum(num) {
+            const mapping = {"0":"零","1":"一","2":"二","3":"三","4":"四","5":"五","6":"六","7":"七","8":"八","9":"九"};
+            return num.toString().split('').map(d => mapping[d]).join('');
+        }
+
+        function update() {
+            const taxType = document.getElementById('taxType').value;
+            let rawSum = 0;
+            let previewHtml = '';
+
+            items.forEach((item, idx) => {
+                const sub = Math.round(item.qty * item.price);
+                rawSum += sub;
+                const y = 60 + (idx * 34);
+                previewHtml += `
+                    <text x="15" y="${y}" class="inv-text" font-size="14">${item.name}</text>
+                    <text x="355" y="${y}" text-anchor="middle" class="inv-text" font-size="14">${item.qty || ''}</text>
+                    <text x="470" y="${y}" text-anchor="end" class="inv-text" font-size="14">${item.price || ''}</text>
+                    <text x="570" y="${y}" text-anchor="end" class="inv-text" font-size="14">${sub ? sub.toLocaleString() : ''}</text>
+                `;
+            });
+            document.getElementById('pItemsGroup').innerHTML = previewHtml;
+
+            let sales, tax, total;
+            if (mode === '3') {
+                sales = Math.round(rawSum);
+                tax = taxType === '5' ? Math.round(sales * 0.05) : 0;
+                total = sales + tax;
+            } else {
+                total = Math.round(rawSum * 1.05);
+                sales = taxType === '5' ? Math.round(total / 1.05) : total;
+                tax = total - sales;
+            }
+
+            document.getElementById('uiSales').innerText = sales.toLocaleString();
+            document.getElementById('uiTax').innerText = tax.toLocaleString();
+            document.getElementById('uiTotal').innerText = total.toLocaleString();
+            document.getElementById('pSalesSub').textContent = sales.toLocaleString();
+            document.getElementById('pTaxSub').textContent = tax.toLocaleString();
+            document.getElementById('pTotalSub').textContent = total.toLocaleString();
+            
+            renderChineseWithStrike(total);
+            
+            document.getElementById('pBuyer').textContent = mode === '3' ? (document.getElementById('buyerName').value || '') : '(可選填)';
+            document.getElementById('pTaxId').textContent = mode === '3' ? (document.getElementById('buyerTaxId').value || '') : '';
+
+            const d = new Date(document.getElementById('dateInput').value);
+            const rocYear = d.getFullYear() - 1911;
+            document.getElementById('pYearText').textContent = toChineseNum(rocYear);
+            document.getElementById('pDateLong').textContent = `中華民國 ${rocYear} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+            
+            const monthArr = ["一、二", "一、二", "三、四", "三、四", "五、六", "五、六", "七、八", "七、八", "九、十", "九、十", "十一、十二", "十一、十二"];
+            document.getElementById('pMonthRange').textContent = monthArr[d.getMonth()];
+
+            let checkX = 133;
+            if (taxType === '0') checkX = 205;
+            if (taxType === 'free') checkX = 270;
+            document.getElementById('pTaxCheck').innerHTML = `<text x="${checkX}" y="55" fill="red" font-size="16" font-weight="bold">✓</text>`;
+        }
+
+        function renderChineseWithStrike(num) {
+            const digits = ["零", "壹", "貳", "參", "肆", "伍", "陸", "柒", "捌", "玖"];
+            const units = ["億", "仟", "百", "拾", "萬", "仟", "百", "拾", "元"];
+            const group = document.getElementById('pChineseGroup');
+            group.innerHTML = '';
+            let str = Math.floor(num).toString().padStart(9, '0');
+            const firstNonZero = str.split('').findIndex(d => d !== '0');
+            let x = 0;
+            const gap = 50; 
+            units.forEach((u, i) => {
+                const isStrike = firstNonZero === -1 || i < firstNonZero;
+                if (isStrike) {
+                    group.innerHTML += `<line x1="${x}" y1="-5" x2="${x+18}" y2="-5" stroke="#cbd5e0" stroke-width="1" />`;
+                } else {
+                    group.innerHTML += `<text x="${x+9}" y="0" class="inv-text" font-size="16" font-weight="bold" text-anchor="middle" fill="#2c5282">${digits[parseInt(str[i])]}</text>`;
+                }
+                group.innerHTML += `<text x="${x+35}" y="0" fill="#3182ce" font-size="14" text-anchor="middle" font-weight="bold">${u}</text>`;
+                x += gap;
+            });
+            if (num > 0) group.innerHTML += `<text x="${x}" y="0" class="inv-text" font-size="16" font-weight="bold">整</text>`;
+        }
+
+        renderItems();
+        update();
+
+        document.getElementById('aiQuery').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') askTaxAI();
+        });
+    </script>
+</body>
+</html>
