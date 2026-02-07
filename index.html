@@ -32,29 +32,14 @@
             transition: all 0.2s;
             font-size: 0.85rem;
             appearance: textfield;
-            -moz-appearance: textfield;
-        }
-        .input-box::-webkit-outer-spin-button,
-        .input-box::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
         }
         .input-box:focus {
             border-color: var(--tofu-accent);
             background-color: #fffef9;
         }
-        .inv-text {
-            font-family: 'Noto Serif TC', serif;
-            fill: #2c5282;
-        }
-        .inv-label {
-            fill: #3182ce;
-            font-size: 11px;
-        }
-        .inv-line {
-            stroke: #3182ce;
-            stroke-width: 0.8;
-        }
+        .inv-text { font-family: 'Noto Serif TC', serif; fill: #2c5282; }
+        .inv-label { fill: #3182ce; font-size: 11px; }
+        .inv-line { stroke: #3182ce; stroke-width: 0.8; }
         .btn-add {
             background: #f39800;
             color: white;
@@ -63,9 +48,17 @@
             font-size: 12px;
             font-weight: bold;
         }
-        .brush-font {
-            font-family: 'Ma Shan Zheng', 'Noto Serif TC', serif;
+        .btn-query {
+            background: #3182ce;
+            color: white;
+            padding: 0 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            transition: opacity 0.2s;
         }
+        .btn-query:hover { opacity: 0.8; }
+        .brush-font { font-family: 'Ma Shan Zheng', 'Noto Serif TC', serif; }
+        #apiStatus { font-size: 10px; color: #a0aec0; margin-top: 2px; }
     </style>
 </head>
 <body class="py-8 px-4">
@@ -76,7 +69,6 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- 左側設定 -->
             <div class="lg:col-span-5 space-y-6">
                 <div class="card p-6">
                     <div class="grid grid-cols-2 gap-4 mb-6">
@@ -99,20 +91,21 @@
                     </div>
 
                     <div id="buyerSection" class="space-y-4 mb-6 transition-opacity duration-300">
-                        <input type="text" id="buyerName" class="input-box" placeholder="買受人名稱 (三聯式必填)" oninput="update()">
-                        <input type="text" id="buyerTaxId" class="input-box font-mono tracking-widest" placeholder="買受人統一編號" maxlength="8" oninput="update()">
+                        <div class="relative flex gap-2">
+                            <input type="text" id="buyerName" class="input-box" placeholder="買受人名稱 (三聯式必填)" oninput="update()">
+                            <button onclick="queryBiz('name')" class="btn-query">查統編</button>
+                        </div>
+                        <div class="relative flex gap-2">
+                            <input type="text" id="buyerTaxId" class="input-box font-mono tracking-widest" placeholder="買受人統一編號" maxlength="8" oninput="update()">
+                            <button onclick="queryBiz('id')" class="btn-query">查名稱</button>
+                        </div>
+                        <div id="apiStatus">功能說明：輸入名稱或統編後點擊查詢按鈕</div>
                     </div>
 
                     <div class="border-t border-gray-100 pt-6 mb-4">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-sm font-bold text-gray-700">銷售項目 (金額擇一填寫，自動四捨五入)</h3>
-                            <button id="addBtn" onclick="addItem()" class="btn-add hover:scale-105 active:scale-95 transition-transform">+ 增加項目</button>
-                        </div>
-                        <div class="grid grid-cols-12 gap-2 mb-2 px-1 text-[11px] font-bold text-gray-400 text-center">
-                            <div class="col-span-4 text-left">品名</div>
-                            <div class="col-span-2">數量</div>
-                            <div class="col-span-3">未稅單價</div>
-                            <div class="col-span-3">含稅單價</div>
+                            <h3 class="text-sm font-bold text-gray-700">銷售項目</h3>
+                            <button id="addBtn" onclick="addItem()" class="btn-add hover:scale-105">+ 增加項目</button>
                         </div>
                         <div id="itemList" class="space-y-4"></div>
                     </div>
@@ -127,7 +120,6 @@
                 </div>
             </div>
 
-            <!-- 右側預覽 -->
             <div class="lg:col-span-7">
                 <div id="previewContainer" class="bg-white p-4 shadow-2xl border border-gray-300 relative overflow-hidden">
                     <svg viewBox="0 0 850 620" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
@@ -137,19 +129,17 @@
                         <text x="425" y="75" text-anchor="middle" font-size="14" fill="#333">
                             <tspan id="pYearText">一一四</tspan> 年 <tspan id="pMonthRange">七、八</tspan> 月份
                         </text>
-
                         <g transform="translate(50, 100)">
                             <text x="0" y="15" class="inv-label">買 受 人：</text>
                             <text x="70" y="15" class="inv-text" font-size="15" id="pBuyer"></text>
                             <line x1="65" y1="20" x2="750" y2="20" class="inv-line" />
                             <text x="0" y="45" class="inv-label">統一編號：</text>
                             <text x="75" y="45" class="inv-text" font-size="25" letter-spacing="12" id="pTaxId"></text>
-                            <text x="350" y="45" class="inv-label" id="pDateLong" font-size="30" font-weight="bold">中華民國 114 年 7 月 2 日</text>
+                            <text x="350" y="45" class="inv-label" id="pDateLong" font-size="30" font-weight="bold"></text>
                             <line x1="65" y1="50" x2="330" y2="50" class="inv-line" />
                             <text x="0" y="75" class="inv-label">地　　址：</text>
                             <line x1="65" y1="80" x2="750" y2="80" class="inv-line" />
                         </g>
-
                         <g transform="translate(50, 190)">
                             <rect width="750" height="380" fill="none" stroke="#3182ce" />
                             <line x1="0" y1="35" x2="750" y2="35" class="inv-line" />
@@ -158,21 +148,16 @@
                             <line x1="480" y1="0" x2="480" y2="210" class="inv-line" />
                             <line x1="580" y1="0" x2="580" y2="380" class="inv-line" />
                             <g font-size="12" fill="#3182ce" text-anchor="middle">
-                                <text x="160" y="22">品　　名</text>
-                                <text x="355" y="22">數 量</text>
-                                <text x="435" y="22">單 價</text>
-                                <text x="530" y="22">金 額</text>
+                                <text x="160" y="22">品　　名</text><text x="355" y="22">數 量</text>
+                                <text x="435" y="22">單 價</text><text x="530" y="22">金 額</text>
                                 <text x="665" y="22">備 註</text>
                             </g>
                             <g id="pItemsGroup"></g>
-                            
-                            <!-- 發票專用章 (靠下方位置) -->
                             <g transform="translate(665, 300)">
                                 <ellipse cx="0" cy="0" rx="60" ry="38" fill="none" stroke="#e53e3e" stroke-width="2" stroke-dasharray="3,2" />
                                 <text x="0" y="-5" text-anchor="middle" font-size="18" fill="#e53e3e" class="brush-font">統一發票</text>
                                 <text x="0" y="12" text-anchor="middle" font-size="18" fill="#e53e3e" class="brush-font">專用章</text>
                             </g>
-
                             <g transform="translate(0, 210)">
                                 <line x1="0" y1="0" x2="750" y2="0" class="inv-line" />
                                 <text x="10" y="22" class="inv-label">銷 售 額 合 計</text>
@@ -180,9 +165,7 @@
                                 <line x1="0" y1="35" x2="580" y2="35" class="inv-line" />
                                 <text x="10" y="57" class="inv-label">營 業 稅</text>
                                 <g font-size="10" fill="#3182ce">
-                                    <text x="110" y="57">應稅 □</text>
-                                    <text x="170" y="57">零稅率 □</text>
-                                    <text x="245" y="57">免稅 □</text>
+                                    <text x="110" y="57">應稅 □</text><text x="170" y="57">零稅率 □</text><text x="245" y="57">免稅 □</text>
                                 </g>
                                 <g id="pTaxCheck"></g>
                                 <text x="570" y="57" text-anchor="end" class="inv-text" font-size="15" id="pTaxSub"></text>
@@ -203,18 +186,60 @@
     </div>
 
     <script>
-        // --- 核心應用邏輯 ---
         let mode = '3';
         let items = [{ name: '', qty: 1, price: 0, taxPrice: 0 }];
-
         document.getElementById('dateInput').valueAsDate = new Date();
 
+        // --- 新增：公示資料查詢邏輯 ---
+        async function queryBiz(type) {
+            const nameEl = document.getElementById('buyerName');
+            const idEl = document.getElementById('buyerTaxId');
+            const statusEl = document.getElementById('apiStatus');
+            
+            statusEl.innerText = "⏳ 查詢中...";
+            statusEl.style.color = "#f39800";
+
+            let url = "";
+            if (type === 'id') {
+                const tid = idEl.value.trim();
+                if(tid.length !== 8) return alert("請輸入8碼統編");
+                url = `https://data.gcis.nat.gov.tw/od/data/api/5F643FD0-7193-4E60-AD7F-EB397072605E?$format=json&$filter=Business_Accounting_NO eq ${tid}`;
+            } else {
+                const tname = nameEl.value.trim();
+                if(!tname) return alert("請輸入公司名稱");
+                url = `https://data.gcis.nat.gov.tw/od/data/api/6B35738A-9A21-4E1D-A682-963071333096?$format=json&$filter=Company_Name like ${tname}&$top=1`;
+            }
+
+            try {
+                // 注意：若遇到 CORS 阻擋，生產環境需透過後端 Proxy
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data && data.length > 0) {
+                    const info = data[0];
+                    if (type === 'id') {
+                        nameEl.value = info.Company_Name || info.Commercial_Name || "未命名";
+                    } else {
+                        idEl.value = info.Business_Accounting_NO;
+                    }
+                    statusEl.innerText = "✅ 查詢成功";
+                    statusEl.style.color = "#48bb78";
+                    update();
+                } else {
+                    statusEl.innerText = "❌ 查無資料，請檢查名稱或統編";
+                    statusEl.style.color = "#e53e3e";
+                }
+            } catch (e) {
+                statusEl.innerText = "⚠️ 查詢受阻 (CORS)。請手動填寫。";
+                statusEl.style.color = "#e53e3e";
+            }
+        }
+
+        // --- 原有邏輯 ---
         function switchMode(m) {
             mode = m;
-            const btn3 = document.getElementById('tab3');
-            const btn2 = document.getElementById('tab2');
-            btn3.className = m === '3' ? 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-orange-500 text-white transition-all' : 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-white text-orange-500 transition-all';
-            btn2.className = m === '2' ? 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-orange-500 text-white transition-all' : 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-white text-orange-500 transition-all';
+            document.getElementById('tab3').className = m === '3' ? 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-orange-500 text-white transition-all' : 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-white text-orange-500 transition-all';
+            document.getElementById('tab2').className = m === '2' ? 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-orange-500 text-white transition-all' : 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-white text-orange-500 transition-all';
             document.getElementById('pTypeLabel').textContent = m === '3' ? '統 一 發 票 (三 聯 式)' : '統 一 發 票 (二 聯 式)';
             document.getElementById('buyerSection').style.opacity = m === '3' ? '1' : '0.4';
             update();
@@ -229,15 +254,13 @@
         function removeItem(index) {
             items.splice(index, 1);
             renderItems();
-            document.getElementById('addBtn').style.display = 'block';
             update();
         }
 
         function updateItemData(idx, field, val) {
             const num = Math.round(parseFloat(val)) || 0;
-            if (field === 'qty') {
-                items[idx].qty = num;
-            } else if (field === 'price') {
+            if (field === 'qty') items[idx].qty = num;
+            else if (field === 'price') {
                 items[idx].price = num;
                 items[idx].taxPrice = Math.round(num * 1.05);
                 document.getElementById(`taxPrice-${idx}`).value = items[idx].taxPrice || '';
@@ -254,21 +277,13 @@
             container.innerHTML = '';
             items.forEach((item, index) => {
                 const div = document.createElement('div');
-                div.className = 'grid grid-cols-12 gap-2 items-center relative';
+                div.className = 'grid grid-cols-12 gap-2 items-center';
                 div.innerHTML = `
-                    <div class="col-span-4">
-                        <input type="text" value="${item.name}" placeholder="品名" class="input-box" oninput="items[${index}].name=this.value; update()">
-                    </div>
-                    <div class="col-span-2">
-                        <input type="number" value="${item.qty}" class="input-box text-center" oninput="updateItemData(${index}, 'qty', this.value)">
-                    </div>
-                    <div class="col-span-3">
-                        <input type="number" id="price-${index}" value="${item.price || ''}" class="input-box text-right bg-gray-50 border-gray-200" oninput="updateItemData(${index}, 'price', this.value)">
-                    </div>
-                    <div class="col-span-2">
-                        <input type="number" id="taxPrice-${index}" value="${item.taxPrice || ''}" class="input-box text-right border-orange-200" oninput="updateItemData(${index}, 'taxPrice', this.value)">
-                    </div>
-                    <button onclick="removeItem(${index})" class="col-span-1 text-red-300 font-bold hover:text-red-500 text-xl leading-none">×</button>
+                    <div class="col-span-4"><input type="text" value="${item.name}" placeholder="品名" class="input-box" oninput="items[${index}].name=this.value; update()"></div>
+                    <div class="col-span-2"><input type="number" value="${item.qty}" class="input-box text-center" oninput="updateItemData(${index}, 'qty', this.value)"></div>
+                    <div class="col-span-3"><input type="number" id="price-${index}" value="${item.price || ''}" class="input-box text-right bg-gray-50" oninput="updateItemData(${index}, 'price', this.value)"></div>
+                    <div class="col-span-2"><input type="number" id="taxPrice-${index}" value="${item.taxPrice || ''}" class="input-box text-right border-orange-200" oninput="updateItemData(${index}, 'taxPrice', this.value)"></div>
+                    <button onclick="removeItem(${index})" class="col-span-1 text-red-300 hover:text-red-500">×</button>
                 `;
                 container.appendChild(div);
             });
@@ -316,7 +331,6 @@
             document.getElementById('pTotalSub').textContent = total.toLocaleString();
             
             renderChineseWithStrike(total);
-            
             document.getElementById('pBuyer').textContent = mode === '3' ? (document.getElementById('buyerName').value || '') : '(可選填)';
             document.getElementById('pTaxId').textContent = mode === '3' ? (document.getElementById('buyerTaxId').value || '') : 'X';
 
@@ -324,7 +338,6 @@
             const rocYear = d.getFullYear() - 1911;
             document.getElementById('pYearText').textContent = toChineseNum(rocYear);
             document.getElementById('pDateLong').textContent = `中華民國 ${rocYear} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
-            
             const monthArr = ["一、二", "一、二", "三、四", "三、四", "五、六", "五、六", "七、八", "七、八", "九、十", "九、十", "十一、十二", "十一、十二"];
             document.getElementById('pMonthRange').textContent = monthArr[d.getMonth()];
 
@@ -342,16 +355,14 @@
             let str = Math.floor(num).toString().padStart(9, '0');
             const firstNonZero = str.split('').findIndex(d => d !== '0');
             let x = 0;
-            const gap = 50; 
             units.forEach((u, i) => {
-                const isStrike = firstNonZero === -1 || i < firstNonZero;
-                if (isStrike) {
-                    group.innerHTML += `<line x1="${x}" y1="-5" x2="${x+18}" y2="-5" stroke="#cbd5e0" stroke-width="1" />`;
+                if (firstNonZero === -1 || i < firstNonZero) {
+                    group.innerHTML += `<line x1="${x}" y1="-5" x2="${x+18}" y2="-5" stroke="#cbd5e0" />`;
                 } else {
-                    group.innerHTML += `<text x="${x+9}" y="0" class="inv-text" font-size="16" font-weight="bold" text-anchor="middle" fill="#2c5282">${digits[parseInt(str[i])]}</text>`;
+                    group.innerHTML += `<text x="${x+9}" y="0" class="inv-text" font-size="16" font-weight="bold" text-anchor="middle">${digits[parseInt(str[i])]}</text>`;
                 }
-                group.innerHTML += `<text x="${x+35}" y="0" fill="#3182ce" font-size="14" text-anchor="middle" font-weight="bold">${u}</text>`;
-                x += gap;
+                group.innerHTML += `<text x="${x+35}" y="0" fill="#3182ce" font-size="14" text-anchor="middle">${u}</text>`;
+                x += 50;
             });
             if (num > 0) group.innerHTML += `<text x="${x}" y="0" class="inv-text" font-size="16" font-weight="bold">整</text>`;
         }
