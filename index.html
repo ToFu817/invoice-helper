@@ -196,23 +196,27 @@
             const idEl = document.getElementById('buyerTaxId');
             const statusEl = document.getElementById('apiStatus');
             
-            statusEl.innerText = "⏳ 查詢中...";
+            statusEl.innerText = "⏳ 透過代理伺服器查詢中...";
             statusEl.style.color = "#f39800";
 
-            let url = "";
+            let apiUrl = "";
             if (type === 'id') {
                 const tid = idEl.value.trim();
                 if(tid.length !== 8) return alert("請輸入8碼統編");
-                url = `https://data.gcis.nat.gov.tw/od/data/api/5F643FD0-7193-4E60-AD7F-EB397072605E?$format=json&$filter=Business_Accounting_NO eq ${tid}`;
+                apiUrl = `https://data.gcis.nat.gov.tw/od/data/api/5F643FD0-7193-4E60-AD7F-EB397072605E?$format=json&$filter=Business_Accounting_NO eq ${tid}`;
             } else {
                 const tname = nameEl.value.trim();
                 if(!tname) return alert("請輸入公司名稱");
-                url = `https://data.gcis.nat.gov.tw/od/data/api/6B35738A-9A21-4E1D-A682-963071333096?$format=json&$filter=Company_Name like ${tname}&$top=1`;
+                apiUrl = `https://data.gcis.nat.gov.tw/od/data/api/6B35738A-9A21-4E1D-A682-963071333096?$format=json&$filter=Company_Name like ${tname}&$top=1`;
             }
 
+            // 使用 corsproxy.io 作為代理服務來繞過 CORS 限制
+            const proxyUrl = "https://corsproxy.io/?";
+            const finalUrl = proxyUrl + encodeURIComponent(apiUrl);
+
             try {
-                // 注意：若遇到 CORS 阻擋，生產環境需透過後端 Proxy
-                const res = await fetch(url);
+                const res = await fetch(finalUrl);
+                if (!res.ok) throw new Error('網路回應不正確');
                 const data = await res.json();
 
                 if (data && data.length > 0) {
@@ -230,7 +234,8 @@
                     statusEl.style.color = "#e53e3e";
                 }
             } catch (e) {
-                statusEl.innerText = "⚠️ 查詢受阻 (CORS)。請手動填寫。";
+                console.error("API Error:", e);
+                statusEl.innerText = "⚠️ 代理伺服器忙碌中或 API 限制，請稍後再試。";
                 statusEl.style.color = "#e53e3e";
             }
         }
