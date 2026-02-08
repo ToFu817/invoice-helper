@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>手開發票小助理 - 稅務小豆腐</title>
+    <title>手開發票小助理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
     <style>
@@ -49,7 +49,7 @@
         }
         .inv-label {
             fill: #3182ce;
-            font-size: 11px;
+            font-size: 14px;
         }
         .inv-line {
             stroke: #3182ce;
@@ -72,7 +72,7 @@
     <div class="max-w-7xl mx-auto">
         <header class="text-center mb-8">
             <h1 class="text-3xl font-bold text-orange-800 tracking-tight">\\ 手開發票小助理 //</h1>
-            <p class="text-gray-500 text-sm mt-2">稅務小豆腐是你的好幫手</p>
+            <p class="text-gray-500 text-sm mt-2">會計的好幫手</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -99,16 +99,19 @@
                     </div>
 
                     <div id="buyerSection" class="space-y-4 mb-6 transition-opacity duration-300">
-                        <input type="text" id="buyerName" class="input-box" placeholder="買受人名稱 (三聯式必填)" oninput="update()">
+                    <input type="text" id="buyerName" class="input-box" placeholder="買受人名稱" oninput="update()">
+                    <div id="taxIdInputGroup">
                         <input type="text" id="buyerTaxId" class="input-box font-mono tracking-widest" placeholder="買受人統一編號" maxlength="8" oninput="update()">
+                    </div>
+
                     </div>
 
                     <div class="border-t border-gray-100 pt-6 mb-4">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-sm font-bold text-gray-700">銷售項目 (金額擇一填寫，自動四捨五入)</h3>
+                            <h3 class="text-sm font-bold text-gray-700">銷售項目 (未稅含稅金額擇一填寫，系統可自動換算)</h3>
                             <button id="addBtn" onclick="addItem()" class="btn-add hover:scale-105 active:scale-95 transition-transform">+ 增加項目</button>
                         </div>
-                        <div class="grid grid-cols-12 gap-2 mb-2 px-1 text-[11px] font-bold text-gray-400 text-center">
+                        <div class="grid grid-cols-12 gap-2 mb-2 px-1 text-[12px] font-bold text-gray-400 text-center">
                             <div class="col-span-4 text-left">品名</div>
                             <div class="col-span-2">數量</div>
                             <div class="col-span-3">未稅單價</div>
@@ -141,18 +144,29 @@
                         <g transform="translate(50, 100)">
                             <text x="0" y="15" class="inv-label">買 受 人：</text>
                             <text x="70" y="15" class="inv-text" font-size="15" id="pBuyer"></text>
-                            <line x1="65" y1="20" x2="750" y2="20" class="inv-line" />
-                            <text x="0" y="45" class="inv-label">統一編號：</text>
-                            <text x="75" y="45" class="inv-text" font-size="25" letter-spacing="12" id="pTaxId"></text>
-                            <text x="350" y="45" class="inv-label" id="pDateLong" font-size="30" font-weight="bold">中華民國 114 年 7 月 2 日</text>
-                            <line x1="65" y1="50" x2="330" y2="50" class="inv-line" />
+                            <line x1="65" y1="20" x2="330" y2="20" class="inv-line" />
+
+                            <g id="pTaxIdRow">
+                                <text x="0" y="45" class="inv-label">統一編號：</text>
+                                <line x1="65" y1="50" x2="330" y2="50" class="inv-line" />
+                                <text x="75" y="45" class="inv-text" font-size="25" letter-spacing="12" id="pTaxId"></text>
+                            </g>
+
+                            <text x="350" y="45" class="inv-label" id="pDateLong" font-size="30" font-weight="bold">中華民國 115 年 1 月 1 日</text>
+
                             <text x="0" y="75" class="inv-label">地　　址：</text>
+                            <text x="70" y="75" class="inv-text" font-size="15" id="pAddress"></text>
                             <line x1="65" y1="80" x2="750" y2="80" class="inv-line" />
                         </g>
 
                         <g transform="translate(50, 190)">
                             <rect width="750" height="380" fill="none" stroke="#3182ce" />
-                            <line x1="0" y1="35" x2="750" y2="35" class="inv-line" />
+                            <line x1="0" y1="35"  x2="750" y2="35" class="inv-line" />
+                            <line x1="0" y1="70"  x2="580" y2="70" class="inv-line" />
+                            <line x1="0" y1="105" x2="580" y2="105" class="inv-line" />
+                            <line x1="0" y1="140" x2="580" y2="140" class="inv-line" />
+                            <line x1="0" y1="175" x2="580" y2="175" class="inv-line" />
+                            <line x1="0" y1="210" x2="580" y2="210" class="inv-line" />
                             <line x1="320" y1="0" x2="320" y2="210" class="inv-line" />
                             <line x1="390" y1="0" x2="390" y2="210" class="inv-line" />
                             <line x1="480" y1="0" x2="480" y2="210" class="inv-line" />
@@ -169,8 +183,8 @@
                             <!-- 發票專用章 (靠下方位置) -->
                             <g transform="translate(665, 300)">
                                 <ellipse cx="0" cy="0" rx="60" ry="38" fill="none" stroke="#e53e3e" stroke-width="2" stroke-dasharray="3,2" />
-                                <text x="0" y="-5" text-anchor="middle" font-size="18" fill="#e53e3e" class="brush-font">統一發票</text>
-                                <text x="0" y="12" text-anchor="middle" font-size="18" fill="#e53e3e" class="brush-font">專用章</text>
+                                <text x="0" y="-5" text-anchor="middle" font-size="20" font-weight="bold" fill="#e53e3e" font-family="'Microsoft JhengHei', 'sans-serif'">統一發票</text>
+                                <text x="0" y="16" text-anchor="middle" font-size="20" font-weight="bold" fill="#e53e3e" font-family="'Microsoft JhengHei', 'sans-serif'">專用章</text>
                             </g>
 
                             <g transform="translate(0, 210)">
@@ -179,10 +193,10 @@
                                 <text x="570" y="22" text-anchor="end" class="inv-text" font-size="15" id="pSalesSub"></text>
                                 <line x1="0" y1="35" x2="580" y2="35" class="inv-line" />
                                 <text x="10" y="57" class="inv-label">營 業 稅</text>
-                                <g font-size="10" fill="#3182ce">
+                                <g font-size="14" fill="#3182ce">
                                     <text x="110" y="57">應稅 □</text>
-                                    <text x="170" y="57">零稅率 □</text>
-                                    <text x="245" y="57">免稅 □</text>
+                                    <text x="185" y="57">零稅率 □</text>
+                                    <text x="275" y="57">免稅 □</text>
                                 </g>
                                 <g id="pTaxCheck"></g>
                                 <text x="570" y="57" text-anchor="end" class="inv-text" font-size="15" id="pTaxSub"></text>
@@ -216,7 +230,8 @@
             btn3.className = m === '3' ? 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-orange-500 text-white transition-all' : 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-white text-orange-500 transition-all';
             btn2.className = m === '2' ? 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-orange-500 text-white transition-all' : 'flex-1 py-2 rounded-lg font-bold border-2 border-orange-500 bg-white text-orange-500 transition-all';
             document.getElementById('pTypeLabel').textContent = m === '3' ? '統 一 發 票 (三 聯 式)' : '統 一 發 票 (二 聯 式)';
-            document.getElementById('buyerSection').style.opacity = m === '3' ? '1' : '0.4';
+            document.getElementById('buyerSection').style.opacity = '1';
+            document.getElementById('taxIdInputGroup').style.display = (m === '3' ? 'block' : 'none');
             update();
         }
 
@@ -287,7 +302,9 @@
             items.forEach((item, idx) => {
                 const sub = Math.round(item.qty * item.price);
                 rawSum += sub;
-                const y = 60 + (idx * 34);
+                const y = 60 + (idx * 34);// 文字的 y 座標
+
+
                 previewHtml += `
                     <text x="15" y="${y}" class="inv-text" font-size="14">${item.name}</text>
                     <text x="355" y="${y}" text-anchor="middle" class="inv-text" font-size="14">${item.qty || ''}</text>
@@ -317,8 +334,30 @@
             
             renderChineseWithStrike(total);
             
-            document.getElementById('pBuyer').textContent = mode === '3' ? (document.getElementById('buyerName').value || '') : '(可選填)';
-            document.getElementById('pTaxId').textContent = mode === '3' ? (document.getElementById('buyerTaxId').value || '') : 'X';
+            // 買受人邏輯處理
+            const buyerVal = document.getElementById('buyerName').value;
+
+            if (mode === '3') {
+                // 三聯式：沒填時提示「(必填)」，字體顏色也可以考慮在 CSS 設為紅色提醒
+                document.getElementById('pBuyer').textContent = buyerVal || '';
+            } else {
+                // 二聯式：沒填時提示「(選填)」，或根據你喜好直接留空 ''
+                document.getElementById('pBuyer').textContent = buyerVal || '(選填)';
+            }
+
+            // 統編顯示與標籤隱藏邏輯 (維持之前的修改)
+            const taxIdRow = document.getElementById('pTaxIdRow');
+            if (mode === '3') {
+                taxIdRow.style.display = 'block';
+                document.getElementById('pTaxId').textContent = document.getElementById('buyerTaxId').value || '';
+            } else {
+                taxIdRow.style.display = 'none';
+                document.getElementById('pTaxId').textContent = '';
+            }
+            // 不論 mode 是 2 還是 3，只要輸入框沒字，就顯示 (可選填)
+            const addrValue = document.getElementById('buyerAddress') ? document.getElementById('buyerAddress').value : '';
+            document.getElementById('pAddress').textContent = addrValue || '(可選填)';
+
 
             const d = new Date(document.getElementById('dateInput').value);
             const rocYear = d.getFullYear() - 1911;
@@ -328,9 +367,9 @@
             const monthArr = ["一、二", "一、二", "三、四", "三、四", "五、六", "五、六", "七、八", "七、八", "九、十", "九、十", "十一、十二", "十一、十二"];
             document.getElementById('pMonthRange').textContent = monthArr[d.getMonth()];
 
-            let checkX = 133;
-            if (taxType === '0') checkX = 205;
-            if (taxType === 'free') checkX = 270;
+            let checkX = 145;
+            if (taxType === '0') checkX = 235;
+            if (taxType === 'free') checkX = 310;
             document.getElementById('pTaxCheck').innerHTML = `<text x="${checkX}" y="55" fill="red" font-size="16" font-weight="bold">✓</text>`;
         }
 
